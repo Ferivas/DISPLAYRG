@@ -1,0 +1,5 @@
+Record=SheetSymbol|SourceDocument=Display_SACA.SchDoc|Designator=DRVLED|SchDesignator=DRVLED|FileName=DRVLED.SchDoc|SymbolType=Normal|RawFileName=DRVLED.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol
+Record=SheetSymbol|SourceDocument=Display_SACA.SchDoc|Designator=Power|SchDesignator=Power|FileName=POWER.SchDoc|SymbolType=Normal|RawFileName=POWER.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol
+Record=SheetSymbol|SourceDocument=Display_SACA.SchDoc|Designator=RS485|SchDesignator=RS485|FileName=RS485.SchDoc|SymbolType=Normal|RawFileName=RS485.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol
+Record=SheetSymbol|SourceDocument=Display_SACA.SchDoc|Designator=UC|SchDesignator=UC|FileName=ATMEGA.SchDoc|SymbolType=Normal|RawFileName=ATMEGA.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol
+Record=TopLevelDocument|FileName=Display_SACA.SchDoc
