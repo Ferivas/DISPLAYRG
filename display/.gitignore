@@ -1,0 +1,17 @@
+build/
+*.hex
+*.elf
+*.lst
+*.o
+*.obj
+*.map
+*.sym
+*.lss
+*.eep
+*.srec
+*.bin
+*.cof
+*.a
+*.txt
+.pio/
+.env/

@@ -1,0 +1,1 @@
+/tmp/opencode/optiboot/optiboot/bootloaders/optiboot/link_optiboot.ld
