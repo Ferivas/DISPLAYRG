@@ -30,7 +30,7 @@ Dim Tmpb3 As Byte
 Dim J As Byte
 Dim K As Byte
 Dim Cntrtick As Byte
-Dim Newseg As Bit
+Dim Newsec As Bit
 Dim Initest As Bit
 Dim Inipeso As Bit
 Dim Unidad As Byte
@@ -67,6 +67,9 @@ Dim Kt2 As Byte
 Dim Inidelay As Bit
 Dim Cntrdelay As Word
 Dim Findelay As Bit
+
+'TIMER1
+Dim Lsyssec As Long
 
 'Variables SERIAL0
 Dim Ser_ini As Bit , Sernew As Bit
@@ -139,12 +142,6 @@ Int_timer0:
       Incr Num_ventana
    End If
 
-   Incr Cntrtick
-   Cntrtick = Cntrtick Mod 50
-   If Cntrtick = 0 Then
-      Set Newseg
-   End If
-
    If Inidelay = 1 Then
       Incr Cntrdelay
       Cntrdelay = Cntrdelay Mod 3200
@@ -159,11 +156,24 @@ Return
 
 
 '*******************************************************************************
+' TIMER1
+'*******************************************************************************
+Int_timer1:
+   Timer1 = &HE3E0                                          'Ints cada 1 Hz
+   Set Newsec
+   Lsyssec = Syssec(time$ , Date$)
+   Incr Lsyssec
+   Time$ = Time(lsyssec)
+   Date$ = Date(lsyssec)
+
+Return
+
+'*******************************************************************************
 ' TIMER0
 '*******************************************************************************
 Int_timer2:
    Timer2 = &H88                                            '960
-   Toggle Pinbug
+   'Toggle Pinbug
 
    Set Oenac
    Set Oenag
@@ -202,6 +212,20 @@ Return
 
 
 
+Getdatetime:
+'Toggle Rele1
+Return
+
+Setdate:
+'Toggle Rele2
+Return
+
+Settime:
+'toggle rele3
+Return
+
+
+
 
 '*******************************************************************************
 ' SUBRUTINAS
@@ -218,7 +242,7 @@ Print #1 , Version(2)
 Print #1 , Version(3)
 Estado_led = 1
 Reset Initest
-Color = 1
+Color = 2
 Reset Sernew
 Reset Peso
 'Bufframr(1) = &H0E
@@ -241,13 +265,13 @@ Sub Dispnum()
       Next
       Tmpb2 = Tmpb - 1
       Ptrm = Lookup(tmpb2 , Tbl_pos)
-      Print #1 , "PTRM=" ; Ptrm
+      'Print #1 , "PTRM=" ; Ptrm
       For J = 1 To Tmpb
          Tmpstr8 = Mid(tmpstr52 , J , 1)
-         If Tmpstr8 <> "." Then
+         If Tmpstr8 <> ":" Then
             Tmpb2 = Val(tmpstr8)
             Ptrdig = Tmpb2 * 5
-            Print #1 , "Ptrdig=" ; Ptrdig
+            'Print #1 , "Ptrdig=" ; Ptrdig
             For K = 1 To 5
                Incr Ptrm
                Tmpb3 = Lookup(ptrdig , Tbl_char)
@@ -284,27 +308,27 @@ Sub Dispnum()
          Else
            Incr Ptrm
             If Color = 0 Then
-               Bufframr(ptrm) = &B11000000
+               Bufframr(ptrm) = &B011001100
                Incr Ptrm
-               Bufframr(ptrm) = &B11000000
+               Bufframr(ptrm) = &B011001100
                Incr Ptrm
                Bufframr(ptrm) = &H00
             End If
             If Color = 1 Then
-               Bufframg(ptrm) = &B11000000
+               Bufframg(ptrm) = &B011001100
                Incr Ptrm
-               Bufframg(ptrm) = &B11000000
+               Bufframg(ptrm) = &B011001100
                Incr Ptrm
                Bufframg(ptrm) = &H00
 
             End If
 
             If Color = 2 Then
-               Bufframr(ptrm) = &B11000000
-               Bufframg(ptrm) = &B11000000
+               Bufframr(ptrm) = &B011001100
+               Bufframg(ptrm) = &B011001100
                Incr Ptrm
-               Bufframr(ptrm) = &B11000000
-               Bufframg(ptrm) = &B11000000
+               Bufframr(ptrm) = &B011001100
+               Bufframg(ptrm) = &B011001100
                Incr Ptrm
                Bufframr(ptrm) = &H00
                Bufframg(ptrm) = &H00
@@ -414,13 +438,13 @@ Sub Displayval()
       Next
       Tmpb2 = Tmpb - 1
       Ptrm = Lookup(tmpb2 , Tbl_pos)
-      Print #1 , "PTRM=" ; Ptrm
+      'Print #1 , "PTRM=" ; Ptrm
       For J = 1 To Tmpb
          Tmpstr8 = Mid(tmpstr52 , J , 1)
-         If Tmpstr8 <> "." Then
+         If Tmpstr8 <> ":" Then
             Tmpb2 = Val(tmpstr8)
             Ptrdig = Tmpb2 * 5
-            Print #1 , "Ptrdig=" ; Ptrdig
+            'Print #1 , "Ptrdig=" ; Ptrdig
             For K = 1 To 5
                Incr Ptrm
                Tmpb3 = Lookup(ptrdig , Tbl_char)
@@ -505,10 +529,10 @@ Sub Test()
             Call Procser()
          End If
 
-         If Newseg = 1 Then
-            Reset Newseg
+         If NewseC = 1 Then
+            Reset NewseC
             Incr K
-            Print #1 , "Newseg," ; K
+            Print #1 , "NewseC," ; K
 
 
             For J = 1 To 32
@@ -636,172 +660,6 @@ Sub Procser()
             Atsnd = "Leedatos buf"
             Set Inileer
 
-         Case "SETVAL"                                      ' Muestra valor en display
-            If Numpar = 3 Then
-               Cmderr = 0
-               Tmpstr52 = Cmdsplit(2)
-               Color = Val(cmdsplit(3))
-               If Color < 3 Then
-                  Atsnd = "Setear texto <" + Tmpstr52 + ">"
-                  Set Inival
-               Else
-                  Cmderr = 6
-               End If
-            Else
-               Cmderr = 5
-            End If
-
-         Case "SETPES"                                      ' Muestra valor de peso
-            If Numpar = 4 Then
-               Cmderr = 0
-               Tmpstr52 = Cmdsplit(2)
-               Color = Val(cmdsplit(3))
-               If Color < 3 Then
-                  Unidad = Val(cmdsplit(4))
-                  If Unidad < 2 Then
-                     Atsnd = "Setear texto <" + Tmpstr52 + ">"
-                     Reset Esperar
-                     Reset Inidelay
-                     Cntrdelay = 0
-                     Set Inipeso
-                  Else
-                     Cmderr = 4
-                  End If
-               Else
-                  Cmderr = 6
-               End If
-            Else
-               Cmderr = 5
-            End If
-
-         Case "INIPES"
-            If Numpar = 2 Then
-               Cmderr = 0
-               Color = Val(cmdsplit(2))
-               If Color < 3 Then
-                  Reset Esperar
-                  Reset Inidelay
-                  Cntrdelay = 0
-                  Unidad = 4
-                  Call Dispunidad()
-                  Wait 1
-                  Unidad = 5
-                  Call Dispunidad()
-                  Wait 1
-                  Unidad = 6
-                  Call Dispunidad()
-                  Wait 1
-                  Set Esperar
-                  Cntrdelay = 0
-                  Set Inidelay
-               Else
-                  Cmderr = 4
-               End If
-            Else
-               Cmderr = 6
-            End If
-
-         Case "ERRPES"
-            If Numpar = 2 Then
-               Cmderr = 0
-               Color = Val(cmdsplit(2))
-               If Color < 3 Then
-                  Reset Esperar
-                  Reset Inidelay
-                  Cntrdelay = 0
-                  Unidad = 8
-                  Call Dispunidad()
-                  Wait 1
-               Else
-                  Cmderr = 4
-               End If
-            Else
-               Cmderr = 6
-            End If
-
-         Case "TARAOK"
-            If Numpar = 2 Then
-               Cmderr = 0
-               Color = Val(cmdsplit(2))
-               If Color < 3 Then
-                  Reset Esperar
-                  Reset Inidelay
-                  Cntrdelay = 0
-                  Unidad = 11
-                  Call Dispunidad()
-                  Wait 1
-                  Unidad = 10
-                  Call Dispunidad()
-                  Wait 1
-               Else
-                  Cmderr = 4
-               End If
-            Else
-               Cmderr = 6
-            End If
-
-         Case "TARAER"
-            If Numpar = 2 Then
-               Cmderr = 0
-               Color = Val(cmdsplit(2))
-               If Color < 3 Then
-                  Reset Esperar
-                  Reset Inidelay
-                  Cntrdelay = 0
-                  Unidad = 11
-                  Call Dispunidad()
-                  Wait 1
-                  Unidad = 8
-                  Call Dispunidad()
-                  Wait 1
-               Else
-                  Cmderr = 4
-               End If
-            Else
-               Cmderr = 6
-            End If
-
-         Case "PTRNOK"
-            If Numpar = 2 Then
-               Cmderr = 0
-               Color = Val(cmdsplit(2))
-               If Color < 3 Then
-                  Reset Esperar
-                  Reset Inidelay
-                  Cntrdelay = 0
-                  Unidad = 12
-                  Call Dispunidad()
-                  Wait 1
-                  Unidad = 10
-                  Call Dispunidad()
-                  Wait 1
-               Else
-                  Cmderr = 4
-               End If
-            Else
-               Cmderr = 6
-            End If
-
-         Case "PTRNER"
-            If Numpar = 2 Then
-               Cmderr = 0
-               Color = Val(cmdsplit(2))
-               If Color < 3 Then
-                  Reset Esperar
-                  Reset Inidelay
-                  Cntrdelay = 0
-                  Unidad = 12
-                  Call Dispunidad()
-                  Wait 1
-                  Unidad = 8
-                  Call Dispunidad()
-                  Wait 1
-               Else
-                  Cmderr = 4
-               End If
-            Else
-               Cmderr = 6
-            End If
 
          Case "SETCER"
             Cmderr = 0

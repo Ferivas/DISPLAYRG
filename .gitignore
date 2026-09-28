@@ -10,3 +10,8 @@ bootloader/*.hex
 bootloader/*.elf
 bootloader/*.lst
 bootloader/.pio/
+*.bm
+*.cfg
+*.dbg
+*.obj
+*.rpt
