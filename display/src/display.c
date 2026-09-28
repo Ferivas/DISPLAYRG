@@ -1,6 +1,7 @@
 #include "display.h"
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/eeprom.h>
 #include <string.h>
 
 uint8_t bufframr[BUFF_SIZE];
@@ -21,6 +22,12 @@ static const uint16_t Tbl_col[16] PROGMEM = {
     0x0001, 0x0002, 0x0004, 0x0008, 0x0010, 0x0020, 0x0040, 0x0080,
     0x0100, 0x0200, 0x0400, 0x0800, 0x1000, 0x2000, 0x4000, 0x8000
 };
+
+#define EEPROM_MAGIC 0xA5
+#define EE_MAGIC_ADDR ((uint8_t *)0)
+#define EE_COLOR_ADDR ((uint8_t *)1)
+#define EE_SCROLL_ADDR ((uint8_t *)2)
+#define EE_TEXT_ADDR ((uint8_t *)3)
 
 void display_init(void) {
     uint8_t i;
@@ -272,12 +279,14 @@ void display_set_text(const char *text, uint8_t text_color) {
     color = text_color;
     scroll_offset = 0;
     display_render();
+    config_save();
 }
 
 void display_set_color(uint8_t text_color) {
     if (text_color > 0 && text_color <= 3) {
         color = text_color;
         display_render();
+        config_save();
     }
 }
 
@@ -285,6 +294,7 @@ void display_set_scroll(uint8_t enable) {
     scroll_enabled = enable ? 1 : 0;
     scroll_offset = 0;
     display_render();
+    config_save();
 }
 
 void display_clear(void) {
@@ -293,4 +303,28 @@ void display_clear(void) {
         bufframr[i] = 0;
         bufframg[i] = 0;
     }
+}
+
+void config_save(void) {
+    eeprom_update_byte(EE_MAGIC_ADDR, EEPROM_MAGIC);
+    eeprom_update_byte(EE_COLOR_ADDR, color);
+    eeprom_update_byte(EE_SCROLL_ADDR, scroll_enabled);
+    eeprom_update_block(text_buffer, EE_TEXT_ADDR, strlen(text_buffer) + 1);
+}
+
+void config_load(void) {
+    uint8_t c, s;
+    if (eeprom_read_byte(EE_MAGIC_ADDR) != EEPROM_MAGIC) {
+        display_set_text("Bienvenidos a su gimnasio", COLOR_GREEN);
+        display_set_scroll(1);
+        return;
+    }
+    eeprom_read_block(text_buffer, EE_TEXT_ADDR, TEXT_BUF_SIZE);
+    text_buffer[TEXT_BUF_SIZE - 1] = '\0';
+    c = eeprom_read_byte(EE_COLOR_ADDR);
+    s = eeprom_read_byte(EE_SCROLL_ADDR);
+    color = (c >= COLOR_RED && c <= COLOR_YELLOW) ? c : COLOR_GREEN;
+    scroll_enabled = s ? 1 : 0;
+    scroll_offset = 0;
+    display_render();
 }

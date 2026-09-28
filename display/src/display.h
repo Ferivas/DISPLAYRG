@@ -39,6 +39,8 @@ void display_render(void);
 void display_scroll_text(void);
 void display_clear(void);
 void display_set_test(uint8_t m);
+void config_save(void);
+void config_load(void);
 void shift_msb16(uint16_t value);
 void shift_lsb8(uint8_t value);
 void display_col_scan(void);

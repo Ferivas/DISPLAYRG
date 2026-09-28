@@ -170,8 +170,7 @@ int main(void) {
 
     sei();
 
-    display_set_text("SAC-A DISPLAY RG 0123456789", COLOR_RED);
-    display_set_scroll(1);
+    config_load();
 
     while (1) {
         display_serial_cmd();
