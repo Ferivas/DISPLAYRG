@@ -50,30 +50,74 @@ Texto, color y scroll se guardan en EEPROM (magic `0xA5` en addr 0, color en 1, 
 
 El panel está cableado invertido en ambos ejes, así que `display_render()` rota el texto 180°: voltea las filas del glifo (bit r ↔ 6-r) y escribe la columna `31 - pos`. Los modos `SETTST` 3 (barrido) y 4 (mitades) están compensados para mantener su sentido físico.
 
-### Compilar y grabar (USBASP)
+### Compilar y grabar por USBASP
 
 ```bash
 cd display
 make              # compila entorno atmega328
-make upload       # graba ATmega328
-make upload328p   # graba ATmega328P
+make upload       # graba ATmega328 por USBASP
+make upload328p   # graba ATmega328P por USBASP
 pio device monitor   # monitor serie a 9600 baud (recordar el $ delante)
 ```
 
+Comandos `avrdude` equivalentes (esta tarjeta 328 necesita SCK lento `-B 100`):
+
+```bash
+# Comprobar conexión y firma (ATmega328 = 1E 95 14; la P es 1E 95 0F)
+avrdude -p atmega328 -c usbasp -B 100
+
+# Grabar firmware y verificar (imprescindible: sin verificación no hay SUCCESS válido)
+avrdude -p atmega328 -c usbasp -B 100 -U flash:w:.pio/build/atmega328/firmware.hex:i
+avrdude -p atmega328 -c usbasp -B 100 -U flash:v:.pio/build/atmega328/firmware.hex:i
+
+# Fusibles sin bootloader (arranque en 0x0000, cristal externo, SPIEN)
+avrdude -p atmega328 -c usbasp -B 100 -U hfuse:w:0xD9:m -U lfuse:w:0xF7:m -U efuse:w:0xFD:m
+```
+
 Notas de grabación:
-- Esta tarjeta 328 necesita SCK lento: `upload_flags = -B 100` ya está en `platformio.ini`. Sin verificación no hay `SUCCESS` válido: un `verification error` indica escritura corrupta (reintentar / revisar conexión USBASP).
-- Firma ATmega328 = `1E 95 14` (la P es `1E 95 0F`).
-- Fusibles sin bootloader: `HFUSE=0xD9` (arranque en `0x0000`), `LFUSE=0xF7` (cristal externo), `EFUSE=0xFD`. Con `HFUSE=0xDE` (bootloader) el micro arranca en la sección de boot y el programa nunca corre.
+- Un `verification error` indica escritura corrupta (reintentar / revisar conexión USBASP).
+- Con `HFUSE=0xDE` (bootloader) el micro arranca en la sección de boot y el programa nunca corre.
+- La grabación por USBASP hace chip-erase y **borra la EEPROM**: al primer arranque se restauran los valores de inicio ("Bienvenidos a su gimnasio", verde, scroll 1).
 
 ## Bootloader (`bootloader/`)
 
-Optiboot compilado con el toolchain AVR de PlatformIO:
+Optiboot compilado con el toolchain AVR de PlatformIO (LED en PC2, 3 parpadeos al arrancar, protocolo STK500v1 a **38400 baud**):
 
 ```bash
 cd bootloader
 make                    # bootloader ATmega328 (498 bytes)
 make TARGET=atmega328p  # variante ATmega328P
-make upload / make upload328p
+make upload / make upload328p   # graba bootloader + fusibles por USBASP
 ```
 
-Fusibles con bootloader: `HFUSE=0xDE, LFUSE=0xF7, EFUSE=0xFD`. Salida: `bootloader/build/optiboot_atmega328.hex` (ignorado por git).
+Salida: `bootloader/build/optiboot_atmega328.hex` (ignorado por git).
+
+Fusibles con bootloader: `HFUSE=0xDE` (BOOTRST, sección de 512 B), `LFUSE=0xF7`, `EFUSE=0xFD`.
+
+### Grabar la aplicación por serie (con bootloader instalado)
+
+Una vez grabado Optiboot, el firmware de `display/` se puede actualizar por el puerto serie sin USBASP (el bootloader se activa al resetear; hay ~1 s para iniciar la subida):
+
+```bash
+cd display
+pio run   # o make, genera .pio/build/atmega328/firmware.hex
+
+avrdude -p atmega328 -c arduino -b 38400 -P /dev/ttyUSB0 \
+  -U flash:w:.pio/build/atmega328/firmware.hex:i
+```
+
+Notas:
+- Ajustar `-P` al puerto real (`/dev/ttyUSB0`, `COM3`, …).
+- La subida por bootloader **no borra la EEPROM**: se conservan el último texto, color y scroll guardados.
+- Si el micro no responde, pulsar reset justo antes del comando (o usar USBASP para regrabar bootloader + fusibles).
+
+## Historial de cambios
+
+- Puerto del firmware BASCOM a C (`display/`, PlatformIO + avr-gcc).
+- Barrido Timer2 a 240 Hz de frame (el original a 60 Hz parpadeaba); Timer0 a 100 Hz (LED PC2 + scroll).
+- Protocolo serie enmarcado `$`…ENTER con `SETTXT`/`SETCOL`/`SETSCR`/`SETTST`.
+- Fuente 5×7 de 64 caracteres (glifo `E` corregido, minúsculas `a-z` añadidas).
+- Rotación de texto 180° (panel cableado invertido en ambos ejes); tests 3/4 compensados.
+- Persistencia de texto/color/scroll en EEPROM (`config_load`/`config_save`).
+- Texto de inicio: "Bienvenidos a su gimnasio", verde, scroll activado.
+- Bootloader Optiboot a 38400 baud con LED en PC2.
