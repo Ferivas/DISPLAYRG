@@ -42,6 +42,10 @@ Respuestas: `OK` o `ERR n`. Comandos sin `$` se ignoran.
 
 64 caracteres en flash: `0-9`, `A-Z`, **`a-z`**, espacio y punto. Glifo `E` corregido (la última columna era `0x07` en vez de `0x49`).
 
+### Orientación
+
+El panel está cableado invertido en ambos ejes, así que `display_render()` rota el texto 180°: voltea las filas del glifo (bit r ↔ 6-r) y escribe la columna `31 - pos`. Los modos `SETTST` 3 (barrido) y 4 (mitades) están compensados para mantener su sentido físico.
+
 ### Compilar y grabar (USBASP)
 
 ```bash

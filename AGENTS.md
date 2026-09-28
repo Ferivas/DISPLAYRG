@@ -32,6 +32,7 @@ This is an electronics/hardware project for a **Display SAC-A** controller board
   - Two 32-byte buffers (red/green), 48-character text buffer
   - PC2 LED blinks 100ms on / 900ms off per second
   - Fonts: 5×7 pixel, alphanumeric characters only (0-9, A-Z, space, period)
+  - Orientation: panel wiring is inverted on both axes — `display_render()` rotates text 180° (glyph row flip r↔6-r, column `31-pos`); test modes 3/4 compensated in `display_col_scan()`
   - Build: `make` or `pio run` | Flash: `make upload` (ATMEGA328 via USBASP) | `make upload328p` (ATMEGA328P via USBASP)
   - Two environments in platformio.ini: `atmega328` and `atmega328p`, both @ 7.3728 MHz
   - Fuse settings (no bootloader): HFUSE=0xD9, LFUSE=0xFF, EFUSE=0xFD

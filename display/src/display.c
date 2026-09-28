@@ -116,6 +116,14 @@ static inline void disable_outputs(void) {
     PORTD |= (1 << 3) | (1 << 5) | (1 << 7);
 }
 
+/* Panel rows are wired bottom-up: mirror 7-row glyphs vertically (bit r <-> bit 6-r). */
+static uint8_t flip_rows(uint8_t b) {
+    b = ((b & 0xAA) >> 1) | ((b & 0x55) << 1);
+    b = ((b & 0xCC) >> 2) | ((b & 0x33) << 2);
+    b = ((b & 0xF0) >> 4) | ((b & 0x0F) << 4);
+    return b >> 1;
+}
+
 void display_col_scan(void) {
     uint8_t col = cntr_col;
     uint16_t col_select;
@@ -139,13 +147,13 @@ void display_col_scan(void) {
         red_a = 0x00; green_a = 0xFF;
         red_b = 0x00; green_b = 0xFF;
     } else if (test_mode == 3) {
-        red_a = (col == test_col) ? 0xFF : 0x00;
+        red_a = (col == (uint8_t)(15 - test_col)) ? 0xFF : 0x00;
         green_a = 0x00;
-        red_b = (col == test_col) ? 0xFF : 0x00;
+        red_b = (col == (uint8_t)(15 - test_col)) ? 0xFF : 0x00;
         green_b = 0x00;
     } else {
-        red_a = 0xFF; green_a = 0x00;
-        red_b = 0x00; green_b = 0xFF;
+        red_a = 0x00; green_a = 0xFF;
+        red_b = 0xFF; green_b = 0x00;
     }
 
     shift_lsb8(red_a);
@@ -212,11 +220,11 @@ void display_render(void) {
             int16_t pos;
             uint8_t col;
             if (idx < NUM_CHARS) {
-                font_byte = pgm_read_byte(&font[idx][i]);
+                font_byte = flip_rows(pgm_read_byte(&font[idx][i]));
             }
             pos = (int16_t)(strip + i) - (int16_t)offset;
             if (pos < 0 || pos >= 32) continue;
-            col = (uint8_t)pos;
+            col = 31 - (uint8_t)pos;
             if (color == COLOR_RED || color == COLOR_YELLOW) {
                 shadow_r[col] = font_byte;
             } else {
